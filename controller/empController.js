@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
+const DOMPurify = require("isomorphic-dompurify");
 
 const secretKey = crypto.randomBytes(32).toString("hex");
 const empSchema = require("../models/employee");
@@ -41,11 +42,14 @@ async function createEmployee(req, res) {
   const { name, email, password, join_date } = req.body;
   try {
     const hash = await bcrypt.hash(password, 8);
+    const sanitizeName = DOMPurify.sanitize(name);
+    const sanitizemail = DOMPurify.sanitize(email);
+    const sanitizeDate = DOMPurify.sanitize(join_date);
     const newEmployee = new empSchema({
-      name,
-      email,
+      name: sanitizeName,
+      email: sanitizemail,
       password: hash,
-      join_date,
+      join_date: sanitizeDate,
     });
     await newEmployee.save();
     res.status(201).json({ message: "Employee created successfully" });
@@ -60,20 +64,26 @@ async function updateEmployee(req, res) {
   const { name, email, password, join_date } = req.body;
   try {
     const hash = await bcrypt.hash(password, 8);
+    const sanitizeName = DOMPurify.sanitize(name);
+    const sanitizemail = DOMPurify.sanitize(email);
+    const sanitizeDate = DOMPurify.sanitize(join_date);
     const updatedEmployee = await empSchema.findByIdAndUpdate(
       id,
       {
-        name,
-        email,
+        name: sanitizeName,
+        email: sanitizemail,
         password: hash,
-        join_date,
+        join_date: sanitizeDate,
       },
       { new: true }
     );
     if (!updatedEmployee) {
       return res.status(404).json({ message: "Employee not found" });
     }
-    res.json({ message: "Employee updated successfully", employee: updatedEmployee });
+    res.json({
+      message: "Employee updated successfully",
+      employee: updatedEmployee,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Internal server error" });
@@ -87,7 +97,10 @@ async function deleteEmployee(req, res) {
     if (!deletedEmployee) {
       return res.status(404).json({ message: "Employee not found" });
     }
-    res.json({ message: "Employee deleted successfully", employee: deletedEmployee });
+    res.json({
+      message: "Employee deleted successfully",
+      employee: deletedEmployee,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Internal server error" });
@@ -99,5 +112,5 @@ module.exports = {
   getAllEmployees,
   createEmployee,
   updateEmployee,
-  deleteEmployee
+  deleteEmployee,
 };
