@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 const bodyParser = require("body-parser");
 const adminRoutes = require('./routes/adminRoutes'); // Import admin routes
 const db = require('./config/db');
@@ -7,6 +8,12 @@ const empRoutes = require('./routes/empRoutes');
 const app = express();
 const PORT = 3001;
 
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 app.use('/admin', adminRoutes);

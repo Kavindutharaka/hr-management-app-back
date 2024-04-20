@@ -9,6 +9,7 @@ const leaveApplication = require("../models/leaveApplication");
 
 async function login(req, res) {
   const { name, password } = req.body;
+  
   try {
     const employee = await empSchema.findOne({ name });
     if (!employee) {
@@ -60,21 +61,37 @@ async function createEmployee(req, res) {
   }
 }
 
+async function getEmpById(req,res){
+  const { id } = req.params;
+  try{
+    const getDataById = await empSchema.findById(id);
+    if(!getDataById){
+      return res.status(404).json({ message: "Employee not found" });
+    }
+    res.json({
+      data: getDataById,
+      message: "Employee get successfully"
+    });
+  }catch(err){
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 async function updateEmployee(req, res) {
   const { id } = req.params;
-  const { name, email, password, join_date } = req.body;
+  const { name, email, password } = req.body;
   try {
     const hash = await bcrypt.hash(password, 8);
     const sanitizeName = DOMPurify.sanitize(name);
     const sanitizemail = DOMPurify.sanitize(email);
-    const sanitizeDate = DOMPurify.sanitize(join_date);
+    // const sanitizeDate = DOMPurify.sanitize(join_date);
     const updatedEmployee = await empSchema.findByIdAndUpdate(
       id,
       {
         name: sanitizeName,
         email: sanitizemail,
-        password: hash,
-        join_date: sanitizeDate,
+        password: hash
+        // join_date: sanitizeDate,
       },
       { new: true }
     );
@@ -210,5 +227,6 @@ module.exports = {
   deleteEmployee,
   applyLeave,
   editLeave,
-  getApplications
+  getApplications,
+  getEmpById
 };
