@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 const adminRoutes = require('./routes/adminRoutes'); // Import admin routes
 const db = require('./config/db');
 const empRoutes = require('./routes/empRoutes');
@@ -14,7 +15,12 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+
 app.use(bodyParser.json());
+
+app.use(cookieParser());
+
 
 app.use('/admin', adminRoutes);
 app.use('/employee', empRoutes);

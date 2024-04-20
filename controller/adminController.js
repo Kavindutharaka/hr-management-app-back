@@ -6,6 +6,26 @@ const secretKey = crypto.randomBytes(32).toString("hex");
 
 const adminLogin = require('../models/admin');
 
+function authenticate(req, res, next) {
+  const token = req.cookies.adminToken;
+  console.log(token)
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, secretKey);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    if (err.name === "JsonWebTokenError") {
+      return res.status(401).json({ message: "Invalid token" });
+    } else {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+  }
+}
+
 async function login(req,res){
     const { username, password } = req.body;
     try {
@@ -21,10 +41,11 @@ async function login(req,res){
       const token = jwt.sign({ adminID: admin._id }, secretKey, {
         expiresIn: "1h",
       });
-      res.cookie('token', token, {
+      res.cookie('adminToken', token, {
         httpOnly:true,
-        secure: true,
-        sameSite: 'strict'
+        // secure: true,
+        sameSite: 'none',
+        maxAge: 7* 24* 60* 60* 1000
       });
 
       res.status(200).json({ message: "Login successful", token });
@@ -35,5 +56,6 @@ async function login(req,res){
 };
 
 module.exports = {
-    login
+    login,
+    authenticate
 };

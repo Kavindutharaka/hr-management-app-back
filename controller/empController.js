@@ -9,7 +9,7 @@ const leaveApplication = require("../models/leaveApplication");
 
 async function login(req, res) {
   const { name, password } = req.body;
-  
+
   try {
     const employee = await empSchema.findOne({ name });
     if (!employee) {
@@ -22,6 +22,11 @@ async function login(req, res) {
     const token = jwt.sign({ empID: employee._id }, secretKey, {
       expiresIn: "1h",
     });
+    res.cookie("token", token, {
+      httpOnly: true,
+      // secure: true,
+      // sameSite: "strict",
+    }); 
 
     res.status(200).json({ message: "Login successful", token });
   } catch (err) {
@@ -61,18 +66,18 @@ async function createEmployee(req, res) {
   }
 }
 
-async function getEmpById(req,res){
+async function getEmpById(req, res) {
   const { id } = req.params;
-  try{
+  try {
     const getDataById = await empSchema.findById(id);
-    if(!getDataById){
+    if (!getDataById) {
       return res.status(404).json({ message: "Employee not found" });
     }
     res.json({
       data: getDataById,
-      message: "Employee get successfully"
+      message: "Employee get successfully",
     });
-  }catch(err){
+  } catch (err) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
@@ -90,7 +95,7 @@ async function updateEmployee(req, res) {
       {
         name: sanitizeName,
         email: sanitizemail,
-        password: hash
+        password: hash,
         // join_date: sanitizeDate,
       },
       { new: true }
@@ -127,7 +132,7 @@ async function deleteEmployee(req, res) {
 
 async function getApplications(req, res) {
   try {
-    const data = await leaveApplication.find();
+    const data = await empSchema.find();
     res.json(data);
   } catch (err) {
     console.error(err);
@@ -135,9 +140,19 @@ async function getApplications(req, res) {
   }
 }
 
+
 async function applyLeave(req, res) {
-  const { emp_id, start_date, end_date, reason } = req.body;
+  const receivedToken = req.headers.authorization;
+  const token = receivedToken.split(' ')[1];
+  console.log("Cookie Token is: ",token);
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized: JWT token is missing" });
+  }
+  const { start_date, end_date, reason } = req.body;
   try {
+    const decoded = jwt.verify(token, secretKey);
+    const emp_id = decoded.empID;
+
     const employee = await empSchema.findById(emp_id);
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
@@ -150,7 +165,9 @@ async function applyLeave(req, res) {
     }
 
     if (endDate <= startDate) {
-      return res.status(400).json({ message: "End date must be after start date" });
+      return res
+        .status(400)
+        .json({ message: "End date must be after start date" });
     }
 
     const sanitizeReason = DOMPurify.sanitize(reason);
@@ -165,9 +182,11 @@ async function applyLeave(req, res) {
     });
     await newLeave.save();
     res.status(200).json({ message: "Leave sent successfully" });
-  
   } catch (err) {
     console.error(err);
+    if (err instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     res.status(500).json({ message: "Internal server error" });
   }
 }
@@ -187,7 +206,9 @@ async function editLeave(req, res) {
     }
 
     if (endDate <= startDate) {
-      return res.status(400).json({ message: "End date must be after start date" });
+      return res
+        .status(400)
+        .json({ message: "End date must be after start date" });
     }
 
     const sanitizeReason = DOMPurify.sanitize(reason);
@@ -195,24 +216,23 @@ async function editLeave(req, res) {
     const editLeave = await leaveApplication.findByIdAndUpdate(
       id,
       {
-      emp_id,
-      start_date: startDate,
-      end_date: endDate,
-      reason: sanitizeReason,
-      status: "pending",
-      created_at: Date.now(),
-    },
-    { new: true}
+        emp_id,
+        start_date: startDate,
+        end_date: endDate,
+        reason: sanitizeReason,
+        status: "pending",
+        created_at: Date.now(),
+      },
+      { new: true }
     );
-    
-    if(!editLeave){
+
+    if (!editLeave) {
       return res.status(404).json({ message: "Cant Edit" });
     }
-   res.json({
-    message: "Edit Successfully",
-    leave: editLeave,
-   });
-  
+    res.json({
+      message: "Edit Successfully",
+      leave: editLeave,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Internal server error" });
@@ -228,5 +248,5 @@ module.exports = {
   applyLeave,
   editLeave,
   getApplications,
-  getEmpById
+  getEmpById,
 };
