@@ -131,14 +131,16 @@ async function deleteEmployee(req, res) {
 }
 
 async function getApplications(req, res) {
+  const emp_id = req.query.emp_id;
   try {
-    const data = await empSchema.find();
-    res.json(data);
+      const data = await leaveApplication.find({ emp_id: emp_id });
+      res.json(data);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Internal server error" });
+      console.error(err);
+      res.status(500).json({ message: "Internal server error" });
   }
 }
+
 
 
 async function applyLeave(req, res) {

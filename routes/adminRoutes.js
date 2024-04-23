@@ -1,9 +1,12 @@
 const express = require("express");
-const router = express.Router();
+const admin = express.Router();
 
 const adminController = require('../controller/adminController');
+const attendController = require('../controller/attandController');
 
-router.post("/login", adminController.login );
-// router.get("/leave", adminController.getApplications );
+admin.post("/login", adminController.login );
+admin.get("/leave", adminController.getApplications );
+admin.post("/leave", adminController.approveApplications );
+admin.get("/attendance",attendController.getAttandance);
 
-module.exports = router;
+module.exports = admin;

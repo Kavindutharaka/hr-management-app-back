@@ -21,9 +21,9 @@ app.use(bodyParser.json());
 
 app.use(cookieParser());
 
-
 app.use('/admin', adminRoutes);
 app.use('/employee', empRoutes);
+
 
 db.once('open', () => {
   app.listen(PORT, () => {
